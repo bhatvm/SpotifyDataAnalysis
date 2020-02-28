@@ -5,9 +5,10 @@ Spotify, one of the most popular audio streaming platforms have an API for devel
 In this series of analysis, I aim to look at some the feature that are derived from Spotify's API for various tracks/ playlists first and understand how these features relate to the changing tastes over time. Slightly being ambitious, I'd like to slowly move towards comparing similar and different tastes between people (Would need more features for this). The objective is to reach slowly towards recommendations based on actuals evolving tastes in music - but this is a farfetched goal.
 
 
-***Source***
-https://developer.spotify.com/
-https://developer.spotify.com/documentation/web-api/reference/tracks/get-audio-features/
+***Source:***
+
+* https://developer.spotify.com/
+* https://developer.spotify.com/documentation/web-api/reference/tracks/get-audio-features/
 
 
 ### Song Features
