@@ -1,6 +1,6 @@
 # Spotify Data Analysis Series
 
-Spotify, one of the most popular audio streaming platforms have an API for developers to explore their music database and get insights into some listening habits.Spotify's API gives you access to some features on their songs (thank god that the've curated these). Here are some of the features that I am looking at for this analysis. 
+Spotify, one of the most popular audio streaming platforms have an API for developers to explore their music database and get insights into some listening habits.Spotify's API gives you access to some features on their songs (thank god that they've curated these). Here are some of the features that I am looking at for this analysis. 
 
 In this series of analysis, I aim to look at some the feature that are derived from Spotify's API for various tracks/ playlists first and understand how these features relate to the changing tastes over time. Slightly being ambitious, I'd like to slowly move towards comparing similar and different tastes between people (Would need more features for this). The objective is to reach slowly towards recommendations based on actuals evolving tastes in music - but this is a farfetched goal.
 
