@@ -1,0 +1,167 @@
+---
+#title: "Spotify Data Analysis Series"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+rm(list=ls())
+knitr::opts_chunk$set(echo = TRUE)
+
+library(dplyr)
+library(data.table)
+library(ggplot2)
+library(reshape2)
+library(bsselectR)
+library(gridExtra)
+library(fmsb)
+```
+
+### **Spotify Data Analysis Series**
+## **E01: Analysing changing YoY tastes in music**
+
+The objective here is to look at the top track playlists globally (curated by spotify at the end of each year) and compare the tastes in music YoY. Since this is the first time, I'd like to get a better understanding of the similarities/differences in these popular songs.
+
+```{r loadDataset, echo = F,error=F}
+dtSpotify <- fread("data/Top tracks key word - 2016-2019.csv")
+metadata_cols <- c("name","album","artist","track.popularity","playlist_name","rank","track.album.release_date","duration_ms","owner")
+feature_cols <- c("danceability","energy","key","loudness","mode","speechiness","acousticness","instrumentalness","liveness","valence","tempo" )
+dtSpotify <- data.table(select(dtSpotify,c(metadata_cols,feature_cols)))
+dtSpotify <- dtSpotify[owner=="Spotify" & rank<=50 & grepl("Top Tracks",playlist_name)]
+dtGlobalTopTracks <-dtSpotify[playlist_name %in% c("Top Tracks of 2016","Top Tracks of 2017","Top Tracks of 2018","Top Tracks of 2019")]
+
+#Looks like we've pulled in two playlists from 2016. dropping the secong
+dtGlobalTopTracks <- dtGlobalTopTracks[-(51:100)]
+```
+
+**Note:**  
+
+* The "Top Tracks playlists" have been scraped for every year from 2016 through 2019. These playlists have different flavors within themselves - for each country : UK, US, NZ etc.  
+
+* As a part of this analysis, I only look at the Global playlists. So one playlist for each year and a total of 4.
+
+* We restrict it to top 50 songs in each playlist.
+
+
+### Looking at all of the features on how they look with top 50 songs YoY
+
+
+
+
+```{r ExploreDataSet, echo = F}
+
+dtSpotify.summary <- summarise(group_by(dtGlobalTopTracks,playlist_name),
+                             avg.duration_min = mean(duration_ms/60000,na.rm = T),
+                             med.duration_min = median(duration_ms/60000,na.rm = T),
+                             avg.danceability = mean(danceability,na.rm = T),
+                             med.danceability = median(danceability,na.rm = T),
+                             avg.energy = mean(energy,na.rm = T),
+                             med.energy = median(energy,na.rm = T),
+                             avg.loudness = mean(loudness,na.rm = T),
+                             med.loudness = median(loudness,na.rm = T),
+                             avg.speechiness = mean(speechiness,na.rm = T),
+                             med.speechiness = median(speechiness,na.rm = T),
+                             avg.acousticness = mean(acousticness,na.rm = T),
+                             med.acousticness = median(acousticness,na.rm = T),
+                             avg.instrumentalness = mean(instrumentalness,na.rm = T),
+                             med.instrumentalness = median(instrumentalness,na.rm = T),
+                             avg.liveness = mean(liveness,na.rm = T),
+                             med.liveness = median(liveness,na.rm = T),
+                             avg.valence = mean(valence,na.rm = T),
+                             med.valence = median(valence,na.rm = T),
+                             avg.tempo = mean(tempo,na.rm = T),
+                             med.tempo = median(tempo,na.rm = T),
+                             countTracks= length(name))
+
+#dtSpotify.summary <- dcast.data.table(data.table(dtSpotify.summary),)
+dtSpotify.summary <- melt(dtSpotify.summary,id.vars = c("playlist_name"))
+dtSpotify.summary <- dtSpotify.summary[grepl("avg",dtSpotify.summary$variable),]
+
+#remove instrumentalness, loudness and tempo for scale comparison
+dtSpotify.summary <- dtSpotify.summary[!(grepl("loudness",dtSpotify.summary$variable) | 
+                                         grepl("tempo",dtSpotify.summary$variable) |
+                                           grepl("instrument",dtSpotify.summary$variable) | 
+                                           grepl("duration",dtSpotify.summary$variable) ),]
+
+listVar <- unique(dtSpotify.summary$variable)
+
+plot <-  ggplot(dtSpotify.summary,aes(x = variable,y = value,color = playlist_name,fill = playlist_name)) +
+    geom_bar(stat = "identity",position="dodge") +
+    scale_fill_discrete(name = "playlist_name") +
+  
+    #facet_grid(. ~ variable) +
+    xlab("Average") +
+    ylab("Features") +
+    ggtitle("Song Features comparison - mean across the playlist") + 
+    coord_flip()
+
+print(plot)
+cat('\n\n')
+  
+
+```
+
+* Density plots give a better view of these features
+
+``` {r DensityPlots, echo = F}
+
+cat('\n\n')
+plot <- list()
+feature_cols <- feature_cols[!(grepl("loudness",feature_cols) | 
+                                         grepl("tempo",feature_cols) |
+                                           grepl("instrument",feature_cols) | 
+                                           grepl("duration",feature_cols) )]
+for(i in c(1:length(feature_cols))){
+    
+    plot[[i]] <-  ggplot(dtGlobalTopTracks,
+    aes(x = select(dtGlobalTopTracks,feature_cols[i])[[1]],
+                 color = playlist_name,
+                 fill = playlist_name), 
+             stat = "identity") +
+      #geom_histogram()
+      geom_density(alpha=.2, fill="#FF6666") +
+    #facet_grid(. ~ variable) +
+      xlab(" ") +
+    #ylab(listVar[i]) +
+    ggtitle(paste0(toupper(feature_cols[i])," over the years"))
+  
+  #plot <- plot + geom_density(alpha=.2, fill="#FF6666") 
+    
+  print(plot[[i]])
+  cat('\n\n')
+  
+}
+
+```
+
+**Observations:**
+
+* From a birds eye view, Looks like songs are getting shorter over the years by a few seconds.
+
+* Dancebility factor has definitley increased when compared to 2016
+
+* Songs are definitely getting louder and in 2019, songs seem to be getting louder than -60dB. (A decibel dB, is the unit used to measure the intensity of a sound – 85dB and above is the level at which noise becomes unsafe without the use of hearing protection.)
+
+* Speechiness in songs seems to have spiked in 2019. (Rap and Collabs have increased?)
+
+* Valence/ Positiveness in songs seem to have been slightly higher in 2019 and 2018.
+
+* Tempo has been pretty consistent.
+
+### 
+
+<!-- ### Picking top 3 most listened songs each year to see how they stack with each year against these features. Is there something that is changing YoY from taste perspective that can be generalized? -->
+
+
+<!-- ```{r TopSongsDeepDive, echo = F} -->
+<!-- dtGlobalTopTracks.norm <- data.table(select(dtGlobalTopTracks,name,artist,rank,playlist_name, danceability:tempo)) -->
+<!-- normCol <- names(dtGlobalTopTracks.norm)[-c(1:4)] -->
+<!-- #dtGlobalTopTracks.norm[,-(1:3)] <-dtGlobalTopTracks.norm[,-(1:3)][,lapply(X=.SD,FUN = X/colSums(X)),.SDcols = normCol] -->
+
+<!-- dtGlobalTopTracks.norm[,(normCol):= lapply(.SD,function(x) x/sum(x)),.SDcols = normCol] -->
+<!-- #dtGlobalTopTracks.norm[,(normCol)] <-dtGlobalTopTracks.norm[,-(1:3)][,lapply(X=.SD,FUN = X/colSums(X)),.SDcols = normCol] -->
+
+<!-- # -->
+<!-- dtTop3Songs <- dtGlobalTopTracks.norm[rank <= 3] -->
+<!-- plotCols <- c("danceability","loudness","speechiness","instrumentalness","liveness","valence","tempo") -->
+<!-- radarchart(select(dtTop3Songs,plotCols)[1:3]) -->
+<!-- ``` -->
