@@ -37,7 +37,7 @@ sp = spotipy.Spotify(client_credentials_manager=client_credentials_manager)
 
 # Get the top tracks playslists over the years    
 keywords = "Top Tracks of "
-years = (2016,2017,2018,2019,2020) 
+years = (2016,2018,2019,2020) 
 owner = "Spotify"
 
 for i,year in enumerate(years):
@@ -45,10 +45,12 @@ for i,year in enumerate(years):
     print(keyword)
     if(i==0):
         playlist_search = spotify_search_as_df(sp,keyword=keyword)
-        playlist_search_master = playlist_search[(playlist_search["name"]==keyword) & (playlist_search["owner.display_name"]==owner)]
+        # playlist_search_master = playlist_search[((playlist_search["name"]==keyword) | (playlist_search["name"]==(keyword+": USA"))) & (playlist_search["owner.display_name"]==owner)]
+        playlist_search_master = playlist_search[(playlist_search["name"]==keyword)]
     else:
         playlist_search = playlist_search.append(spotify_search_as_df(sp,keyword=keyword),ignore_index = True)
-        playlist_search = playlist_search[(playlist_search["name"]==keyword) & (playlist_search["owner.display_name"]==owner)]
+        # playlist_search_master = playlist_search[((playlist_search["name"]==keyword) | (playlist_search["name"]==(keyword+": USA"))) & (playlist_search["owner.display_name"]==owner)]
+        playlist_search_master = playlist_search[(playlist_search["name"]==keyword)]
         playlist_search_master = playlist_search_master.append(playlist_search,ignore_index = True)        
 
 # Get the tracks from playlist master and their audio features
@@ -65,6 +67,7 @@ for i in range(0,len(playlist_search_master)):
         
         song = get_songfeatures_(sp,track_id=tracks_metadata["track.id"].loc[j])
         song["name"] = tracks_metadata["track.name"].loc[j]
+        song["rank"] = tracks_metadata.index[j] + 1
         song["id"] = tracks_metadata["track.id"].loc[j]
         song["album"] = tracks_metadata["track.album.name"].loc[j]
         song["artist"] = ' , '.join(json_normalize(tracks_metadata["track.artists"].loc[j])["name"])
@@ -78,9 +81,11 @@ for i in range(0,len(playlist_search_master)):
             song_master = song_master.append(song,ignore_index = True)
     
     song_master["playlist_name"] = playlist["name"]
+    song_master["owner"] = playlist["owner.display_name"]
+    
     if(i==0):
         song_features_master = song_master
     else:
         song_features_master = song_features_master.append(song_master,ignore_index = True)
     
-song_features_master.to_csv("data/Top tracks by Spotify - 2016-2019.csv")
+song_features_master.to_csv("data/Top tracks key word - 2016-2019.csv")
